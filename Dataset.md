@@ -35,18 +35,6 @@ Supervision is provided as a set of **10 pre-identified abnormal-stop locations*
 
 ---
 
-## Files and Organization
-
-> Adjust the file names below to match your repository.
-
-- `gps_points.csv`  
-  Raw/processed GPS point-level records (the schema below).
-- `abnormal_stop_coordinates.csv`  
-  List of the 10 abnormal-stop locations used for labeling (latitude/longitude pairs).
-- (Optional) `stops_or_segments.csv`  
-  Outputs after stop extraction and SAS segmentation, used for indicator construction and graph learning.
-
----
 
 ## Schema (column dictionary)
 
@@ -67,13 +55,3 @@ Each row corresponds to one GPS record (a sampled point) for a specific vehicle.
 | `arrival_clustering_time` | int/float | Arrival / clustering timestamp used for aligning or clustering events (dataset-specific encoding) |
 
 ---
-
-## Example rows
-
-Below are sample rows (tab-separated) to illustrate the format:
-
-```text
-longitude    latitude    stay_time   dist_from_start   speed   dist_from_prev   traffic_light_label   date   time    license_plate   arrival_clustering_time
-116.331713   40.042502   20.0        26366.402078      67.0    534.228775       10.0                 1101   35640.0 5873.0         95400.0
-116.332025   40.041952   24.0        25610.075754      72.0    670.466080       10.0                 1101   32583.0 5987.0         90303.0
-116.323361   40.053570   210.0       27102.377309      0.0     342.283524       10.0                 1101   32703.0 5987.0         90503.0
