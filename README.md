@@ -1,69 +1,66 @@
-## Reproducibility and Ablation Controls
+# Few-Shot Semi-Supervised Learning for Abnormal Stop Detection from Sparse GPS Trajectories
 
-This repository supports the ablation studies reported in the paper via simple switches in `main.py`.
-
----
-
-### A1. Sparsity-Aware Segmentation (SAS) vs. Fixed-Length Segmentation
-
-In `main.py`:
-
-- `use_sas = True`  → enable **SAS** (adaptive segmentation for sparse GPS)
-- `use_sas = False` → use **fixed-length segmentation**
+This repository provides the implementation of our **graph-based semi-supervised framework** for **abnormal stop detection (ASD)** in **long-distance coach transportation** under **low-frequency GPS sampling** and **extreme label scarcity**. 
 
 ---
 
-### A2. LTIGA Smoothing Impact
+## Overview
 
-In `main.py`:
+Abnormal stop detection aims to identify **unauthorized or atypical stops** (e.g., non-designated pick-up/drop-off points or unusual dwell behavior) that may introduce safety, operational, and regulatory risks.
+In practice, ASD is challenging because:
 
-- `use_ltiga = True`  → apply **LTIGA** smoothing/refinement
-- `use_ltiga = False` → skip LTIGA (use pre-LTIGA indicators directly)
+- **Sparse GPS trajectories** can obscure short or irregular stop behaviors. 
+- **Labeled abnormal stops are extremely scarce**, making fully supervised training unreliable. 
+
+To address these issues, we propose a **four-stage pipeline** that jointly improves segmentation quality, feature reliability, and semi-supervised learning on a segment graph.
+---
+
+## Method Summary (Four-Stage Pipeline)
+
+### Stage 1 — Sparsity-Aware Segmentation (SAS)
+We introduce **Sparsity-Aware Segmentation (SAS)** to adaptively segment each trip into behaviorally consistent units using trajectory-specific spatio-temporal continuity statistics, improving stability under sparse sampling. 
+
+### Stage 2 — Domain-Specific Indicators
+For each SAS segment, we compute three interpretable indicators to characterize abnormal stop behavior:
+
+- **TIS**: Temporal Influence Score  
+- **MSD**: Maximum Speed Deviation  
+- **TTA@k**: Top-k Aggregated Temporal Score 
+
+### Stage 3 — LTIGA Noise-Robust Enhancement
+To mitigate indicator noise caused by irregular sampling, we propose **Locally Temporal-Indicator Guided Adjustment (LTIGA)**, which smooths segment indicators using local similarity graphs before graph construction. 
+
+### Stage 4 — Graph-Based Semi-Supervised Learning
+We construct a **segment-level spatio-temporal graph** where each segment is a node with **LTIGA-refined features**, then:
+
+1. Apply **label propagation** to expand weak supervision across the graph 
+2. Train a **GCN** to learn relational patterns among trajectory segments for ASD prediction
+
+Pseudo-labels are accepted only under strict confidence thresholds (e.g., abnormal probability ≥ 0.995 / ≤ 0.005) to avoid error amplification under extreme label scarcity. 
 
 ---
 
-### A3. Baseline: GCN with Fixed-Length Segmentation + No LTIGA
+## Dataset
 
-In `main.py`:
+### Collection and Supervision
+The dataset was collected via field operation on the **Liuliqiao–Zhangjiakou intercity route**. Abnormal-stop supervision is provided by **10 pre-identified abnormal-stop GPS locations** recorded during data collection. :contentReference[oaicite:11]{index=11}
 
-- `use_sas = False`  → disable SAS (use fixed-length segmentation)
-- `use_ltiga = False` → disable LTIGA (no indicator refinement)
+### Key Statistics
+- Route: Liuliqiao (Beijing) → Zhangjiakou (Hebei) 
+- Approx. route length: ~180 km 
+- GPS records: 2,410 
+- Unique vehicles: 16 
+- Sampling interval: 30–60 s 
+- Abnormal-stop supervision: 10 abnormal-stop locations (GPS coordinates) 
 
----
-
-## Multiple Runs with Different Random Seeds
-
-In the terminal, run multiple trials with different random seeds to report mean ± std performance:
-
-- `python main.py --seed 42 --trial_id run1`  
-- `python main.py --seed 43 --trial_id run2`  
-- `python main.py --seed 44 --trial_id run3`  
-- `python main.py --seed 45 --trial_id run4`  
-- `python main.py --seed 46 --trial_id run5`  
+For dataset format and column definitions, see `dataset.md`.
 
 ---
 
+## Results (Label-Efficient ASD)
 
-## SAS Sensitivity: Tuning α and β
-
-To evaluate the sensitivity of **Sparsity-Aware Segmentation (SAS)**, edit the parameters in `main.py` under:
-
-> **Step 2: Segment the road**
-
-Test different values of:
-
-- α, β ∈ {0.5, 1.0 (default), 1.5}
+With **only 10 labeled instances**, the method achieves **AUC = 0.854** and **AP = 0.866** on real-world coach data.
+Across multiple runs, the model consistently outperforms existing baselines and remains robust under sparse sampling and label scarcity. 
 
 ---
 
-## LTIGA Sensitivity: Tuning K (Number of Neighbors)
-
-To evaluate the sensitivity of **LTIGA smoothing**, edit `main.py` under:
-
-> **Step 3: Calculate indicators before LTIGA (no confidence weighting)**
-
-Locate the line defining the neighborhood size (e.g., `k = 3`) and change it.
-
-Suggested values:
-
-- K ∈ {2, 3 (default), 5}
